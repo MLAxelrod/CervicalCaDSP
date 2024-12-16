@@ -1,17 +1,6 @@
 ##CervicalCancer
 ##GeoMX DSP
 
-
-### overall: Up in high risk epi = cell cycle, adhesion, immune; Up in high risk stroma is more immune focused
-#similar within pt11??
-#show pathways and heatmaps?
-
-####tidy code; do second patient with three and see if similar pathways.. do all? and see ifsimilar pathways
-##simplify pathway plots ;come up with more informative heatmap genes... based on pathways? or pathway just the heatmap genes like fewer genes into the pathway thing
-# Is there a better like cancer pathways type thing than KEGG and GO?? Maybe better Gene sets for GSEA
-
-##Added high risk and low risk to metadata: LVSI in B cases 34511; 27635
-
 library(ggplot2)
 library(rstatix)
 library(ggpubr)
@@ -1143,6 +1132,50 @@ ggplot(full.e, aes(x= sil.risk, y= SERPINA3))+
                    labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
   labs(x=element_blank(),
        color="Case")
+
+
+
+
+ggplot(full.e, aes(x=sil.risk, y=TNC))+
+  geom_boxplot(outlier.shape = NA)+
+    geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
+  labs(x=element_blank(),
+       color="Case")
+
+ggsave("TNC.png", path=path)
+
+
+risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC")
+
+
+risk.data <- full.e[,colnames(full.e) %in% risk.genes]
+
+risk.data$score <- rowSums(risk.data)/length(risk.genes)
+
+full.e$score <- risk.data$score
+
+
+ggplot(full.e, aes(x=sil.risk, y=score))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="4 Gene Risk Score")
+
+
+
+
+
 
 
 
