@@ -1,6 +1,8 @@
 ##CervicalCancer
 ##GeoMX DSP
 
+###need to make this a renv project ; on reopen some of my packages were gone??
+
 library(ggplot2)
 library(rstatix)
 library(ggpubr)
@@ -14,6 +16,7 @@ library(tidyverse)
 library(ComplexHeatmap)
 library(ggrepel)
 library(gprofiler2)
+library(patchwork)
 
 theme_set(theme_classic())
 theme_update(axis.text=element_text(color="black", size=10), 
@@ -1114,7 +1117,9 @@ all(rownames(meta)==colnames(data))
 
 meta$Case <- as.character(meta$Case)
 
-full <- cbind(meta, as.data.frame(t(scaleRow(data))))
+full <- cbind(meta, as.data.frame(t(scaleRow(data)))) #with Z score
+
+#full <- cbind(meta, as.data.frame(t(data))) # no z score
 
 full$ID2 <- NULL
 ###really just get rid of this in metadata
@@ -1129,25 +1134,131 @@ ggplot(full.e, aes(x= sil.risk, y= SERPINA3))+
                                 "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
                                 "8522"= "#DEA0FD"))+
   scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
+                   labels=c("Benign", "A", "B Low Risk", "B High Risk", "C"))+
   labs(x=element_blank(),
        color="Case")
 
 
 
+p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="KRT6A Z-score",
+       color="Case")+
+  theme(legend.position = "none")
 
-ggplot(full.e, aes(x=sil.risk, y=TNC))+
+
+
+p2 <- ggplot(full.e, aes(x=sil.risk, y=TNC))+
   geom_boxplot(outlier.shape = NA)+
     geom_point(aes(color=Case))+
   scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
                                 "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
                                 "8522"= "#DEA0FD"))+
   scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
   labs(x=element_blank(),
-       color="Case")
+       y="TNC Z-score",
+       color="Case")+
+  theme(legend.position = "none")
 
-ggsave("TNC.png", path=path)
+
+p3 <- ggplot(full.e, aes(x=sil.risk, y=SERPINA3))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="SERPINA3 Z-score",
+       color="Case")+
+  theme(legend.position = "none")
+
+p4 <- ggplot(full.e, aes(x=sil.risk, y=LAMC2))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="LAMC2 Z-score",
+       color="Case")+
+  theme(legend.position = "none")
+
+p5 <- ggplot(full.e, aes(x=sil.risk, y=FN1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="FN1 Z-score",
+       color="Case")+
+  theme(legend.position = "none")
+
+p6 <- ggplot(full.e, aes(x=sil.risk, y=CCND1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="CCND1 Z-score",
+       color="Case")+
+  theme(legend.position = "none")
+
+
+
+(p1+p2+p3)/(p4+p5+p6)
+#ggsave("6sharedgenes.png", path=path)
+
+
+
+p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="KRT6A",
+       color="Case")+
+  theme(legend.position = "none")
+
+
+p2 <- ggplot(full.e, aes(x=sil.risk, y=KRT5))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="KRT5",
+       color="Case")+
+  theme(legend.position = "none")
+
+
+p1|p2
+
+#ggsave("CK56.png", path=path)
 
 
 risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC")
@@ -1172,13 +1283,119 @@ ggplot(full.e, aes(x=sil.risk, y=score))+
        color="Case",
        y="4 Gene Risk Score")
 
+############### plots genes stroma ##################
+
+full.s <- full[full$Compartment=="stroma",]
+
+stroma.genes ##id'ed by pathways
+#"SFRP2" , "MMP9",   "OLR1"    "FN1" #CTHRC1 ###HK3 excluding case 18418
+#"IL1RN"    "CHIT1" "HK3" ## not as good of a separation
+
+
+
+p1 <- ggplot(full.s, aes(x=sil.risk, y=CTHRC1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="CTHRC1 Z-score")+ theme(legend.position = "none")
+
+
+p2 <- ggplot(full.s, aes(x=sil.risk, y=SFRP2))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="SFRP2 Z-score")+ theme(legend.position = "none")
+
+p3 <- ggplot(full.s, aes(x=sil.risk, y=MMP9))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="MMP9 Z-score")
+
+p4 <- ggplot(full.s, aes(x=sil.risk, y=OLR1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="OLR1 Z-score")+ theme(legend.position = "none")
+
+
+p5 <- ggplot(full.s, aes(x=sil.risk, y=FN1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="FN1 Z-score")+ theme(legend.position = "none")
+
+
+
+ggplot(full.s, aes(x=sil.risk, y=C3))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case")
 
 
 
 
 
+sub1 <- full.s[full.s$Case!="18418",]
+
+p6 <- ggplot(sub1, aes(x=sil.risk, y=HK3))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case", 
+       y="HK3 Z-score")+ theme(legend.position = "none")
 
 
+
+(p1+p2+p3)/(p4+p5+p6)
+
+
+#ggsave("stroma_sixgenes.png", path=path)
+
+
+
+####################################
 df <- full.e
 
 

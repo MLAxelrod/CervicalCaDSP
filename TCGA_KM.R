@@ -18,6 +18,7 @@ path <- "C:/Users/marga/Desktop/CCa_GEOMX/plots/"
 #####cbioportal data #####
 
 data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RNA Seq V2 RSEM).txt")
+data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RNA Seq V2 RSEM)_stroma.txt")
 meta <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/KM_Plot__Overall_(months).txt")
 
 colnames(meta) <- c("Study", "Pt", "OS_status", "OS_months")
@@ -28,6 +29,7 @@ meta$OS_stat_num <- as.numeric(substr(meta$OS_status,1,1))
 ##get rid of trailing "-01" in sample ID
 data$SAMPLE_ID <- substr(data$SAMPLE_ID, 1, nchar(data$SAMPLE_ID)-3)
 
+data$SAMPLE_ID %in% meta$Pt
 all(data$SAMPLE_ID %in% meta$Pt)
 
 df <- data[match(meta$Pt, data$SAMPLE_ID),]
@@ -36,6 +38,7 @@ all(df$SAMPLE_ID == meta$Pt)
 
 ##Scale Row by z-score
 df2 <- as.data.frame(df[,3:177])
+df2 <- as.data.frame(df[,3:15])
 df2$SLURP2 <-  NULL
 df2$TMEM265 <- NULL
 sum(is.na(df2)) ##remove NA values
@@ -194,12 +197,18 @@ ggsurvplot(fit,
 
 
 
+
+
+
+
 ####Make risk score 
 
 #risk.genes <- c("SERPINA3", "CCDN1", "FN1", "KRT6A", "LAMC2", "TNC")
 #risk.genes <- c("CCDN1", "FN1", "KRT6A", "LAMC2", "TNC")
-risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC")
 
+risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC") ##epi genes
+
+risk.genes <- c("FN1", "HK3", "MMP9", "CTHRC1", "SRFP2", "OLR1") ##stroma
 
 risk.data <- full[,colnames(full) %in% risk.genes]
 
@@ -223,6 +232,11 @@ full <- mutate(full, SCOREgroup=ifelse(full$score>-0.3076, "high", "low"))
 full <- mutate(full, SCOREgroup=ifelse(full$score>-0.1380, "high", "low"))
 
 
+#stroma 
+full <- mutate(full, SCOREgroup=ifelse(full$score>0.3189, "high", "low"))
+full <- mutate(full, SCOREgroup=ifelse(full$score>-0.1200, "high", "low"))
+
+
 
 fit<-survfit(Surv(OS_months, OS_stat_num) ~ SCOREgroup, data=full)
 ggsurvplot(fit,
@@ -243,6 +257,70 @@ foo <- cbind(full$OS_months, full$OS_status, full$score, full$SCOREgroup)
 #for sanity check that association all in expected directions
 
 #######
+
+
+
+
+
+
+################ Stroma genes
+#"SFRP2" , "MMP9",   "OLR1"    "FN1" #CTHRC1 ###HK3 excluding case 18418; already did FN1
+
+###MMP9 ## No association
+cp <- cutpointr(full, MMP9, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
+summary(cp)
+summary(full$MMP9)
+full <- mutate(full, Genegroup=ifelse(full$MMP9>0.442, "high", "low")) #youden
+full <- mutate(full, Genegroup=ifelse(full$MMP9>-0.2337, "high", "low")) #median
+
+#SFRP9 #no association
+cp <- cutpointr(full, SFRP2, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
+summary(cp)
+summary(full$SFRP2)
+full <- mutate(full, Genegroup=ifelse(full$SFRP2>0.0554, "high", "low")) #youden
+full <- mutate(full, Genegroup=ifelse(full$SFRP2>-0.2337, "high", "low")) #median
+
+
+#HK3 #no association
+cp <- cutpointr(full, HK3, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
+summary(cp)
+summary(full$HK3)
+full <- mutate(full, Genegroup=ifelse(full$HK3>-0.1166, "high", "low")) #youden
+full <- mutate(full, Genegroup=ifelse(full$HK3>-0.32164, "high", "low")) #median
+
+
+#CTHRC1 #no assoicaiton
+cp <- cutpointr(full, CTHRC1, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
+summary(cp)
+summary(full$CTHRC1)
+full <- mutate(full, Genegroup=ifelse(full$CTHRC1>0.2916, "high", "low")) #youden
+full <- mutate(full, Genegroup=ifelse(full$CTHRC1>-0.3976, "high", "low")) #median
+
+
+#OLR1 # no association
+cp <- cutpointr(full, OLR1, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
+summary(cp)
+summary(full$OLR1)
+full <- mutate(full, Genegroup=ifelse(full$OLR1>-0.0428, "high", "low")) #youden
+full <- mutate(full, Genegroup=ifelse(full$OLR1>-0.4577, "high", "low")) #median
+
+
+
+
+fit<-survfit(Surv(OS_months, OS_stat_num) ~ Genegroup, data=full)
+ggsurvplot(fit,
+           data=full,
+           pval = TRUE, pval.coord=c(40,0.1),
+           risk.table = TRUE, 
+           risk.table.col = "strata", 
+           censor.shape=124,
+           ggtheme = theme_classic(),
+           font.y=14, font.x=14, font.tickslab="black",
+           legend.title=element_blank(),
+           tables.theme = theme_cleantable(),
+           fontsize=4,tables.y.text=FALSE)
+
+
 
 
 
@@ -324,6 +402,18 @@ ggsurvplot(fit,
            fontsize=4,tables.y.text=FALSE)
 
 ##p = 0.26 , most promising so far ....
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

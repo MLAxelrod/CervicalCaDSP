@@ -1997,7 +1997,9 @@ Heatmap(z,
         heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
 
 
-####STROMA
+
+
+########STROMA ################
 up.p85 <- p85.BvAstroma[p85.BvAstroma$log2FoldChange>0.5,]
 up.p11 <- p11.CvBstroma[p11.CvBstroma$log2FoldChange>0.5,]
 up.p15 <- p15.BvAstroma[p15.BvAstroma$log2FoldChange>0.5,]
@@ -2040,6 +2042,8 @@ gostplot(gostres, capped = FALSE, interactive = TRUE)
 foo4 <- gostres$result
 
 terms <- c("REAC:R-HSA-6798695", "REAC:R-HSA-168249", "REAC:R-HSA-1474244", "KEGG:04145", "GO:0005125", "WP:WP2806", "GO:0004175", "WP:WP5055")
+
+terms <- c("REAC:R-HSA-6798695", "REAC:R-HSA-168249", "REAC:R-HSA-1474244", "REAC:R-HSA-1474228", "KEGG:04145", "KEGG:04610", "GO:0001968", "GO:0005125", "GO:0004175", "WP:WP2806")
 
 
 publish_gosttable(gostres, highlight_terms = terms,
@@ -2089,6 +2093,15 @@ ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
 
 #ggsave("terms_upinWorseStromashared.png", path= path)
 
+
+###Getting genes driving the upregulated pathways
+foo9 <- paste(foo5$intersection, collapse=",")
+foo10 <- unlist(strsplit(foo9, split=","))
+foo11 <- unique(foo10)
+
+foo12 <- as.character(test$Var1[test$Freq>2])
+
+stroma.genes <- foo11[foo11 %in% foo12]
 
 #Heatmap
 
