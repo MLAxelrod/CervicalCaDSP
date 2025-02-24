@@ -1110,8 +1110,8 @@ Heatmap(z,
 
 
 
-
-########### plots some individual genes 
+#############################################################
+########### plots some individual genes #####################
 
 all(rownames(meta)==colnames(data)) 
 
@@ -1139,6 +1139,7 @@ ggplot(full.e, aes(x= sil.risk, y= SERPINA3))+
        color="Case")
 
 
+stat <- wilcox_test(full.e, KRT6A~sil.risk)
 
 p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
   geom_boxplot(outlier.shape = NA)+
@@ -1151,9 +1152,11 @@ p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
   labs(x=element_blank(),
        y="KRT6A Z-score",
        color="Case")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position = c(2.3,3.7), hide.ns = TRUE, label="p.adj.signif")
 
 
+stat <- wilcox_test(full.e, TNC~sil.risk)
 
 p2 <- ggplot(full.e, aes(x=sil.risk, y=TNC))+
   geom_boxplot(outlier.shape = NA)+
@@ -1166,8 +1169,10 @@ p2 <- ggplot(full.e, aes(x=sil.risk, y=TNC))+
   labs(x=element_blank(),
        y="TNC Z-score",
        color="Case")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position = c(2,2.5), hide.ns = TRUE, label="p.adj.signif")
 
+stat <- wilcox_test(full.e, SERPINA3 ~ sil.risk)
 
 p3 <- ggplot(full.e, aes(x=sil.risk, y=SERPINA3))+
   geom_boxplot(outlier.shape = NA)+
@@ -1180,7 +1185,11 @@ p3 <- ggplot(full.e, aes(x=sil.risk, y=SERPINA3))+
   labs(x=element_blank(),
        y="SERPINA3 Z-score",
        color="Case")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  stat_pvalue_manual(stat, hide.ns = TRUE, label= "p.adj.signif", y.position = c(2.9, 3.7 , 4.1, 3.4, 4.3, 4.6))
+
+
+stat <- wilcox_test(full.e, LAMC2~sil.risk)
 
 p4 <- ggplot(full.e, aes(x=sil.risk, y=LAMC2))+
   geom_boxplot(outlier.shape = NA)+
@@ -1193,8 +1202,11 @@ p4 <- ggplot(full.e, aes(x=sil.risk, y=LAMC2))+
   labs(x=element_blank(),
        y="LAMC2 Z-score",
        color="Case")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position = c(2,2.7,3.7), hide.ns = TRUE, label="p.adj.signif")
 
+
+stat <- wilcox_test(full.e, FN1~sil.risk)
 p5 <- ggplot(full.e, aes(x=sil.risk, y=FN1))+
   geom_boxplot(outlier.shape = NA)+
   geom_point(aes(color=Case))+
@@ -1206,7 +1218,10 @@ p5 <- ggplot(full.e, aes(x=sil.risk, y=FN1))+
   labs(x=element_blank(),
        y="FN1 Z-score",
        color="Case")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position = c(2, 1.6, 1.8 ,2.2), hide.ns = TRUE, label="p.adj.signif")
+
+stat <- wilcox_test(full.e, CCND1 ~sil.risk)
 
 p6 <- ggplot(full.e, aes(x=sil.risk, y=CCND1))+
   geom_boxplot(outlier.shape = NA)+
@@ -1219,12 +1234,13 @@ p6 <- ggplot(full.e, aes(x=sil.risk, y=CCND1))+
   labs(x=element_blank(),
        y="CCND1 Z-score",
        color="Case")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position = c(2, 3.8, 2.5, 3.5, 3), hide.ns = TRUE, label="p.adj.signif")
 
 
 
 (p1+p2+p3)/(p4+p5+p6)
-#ggsave("6sharedgenes.png", path=path)
+#ggsave("EPI6sharedgenes.png", path=path)
 
 
 
@@ -1271,6 +1287,8 @@ risk.data$score <- rowSums(risk.data)/length(risk.genes)
 full.e$score <- risk.data$score
 
 
+stat <- wilcox_test(full.e, score~sil.risk)%>% add_significance()
+
 ggplot(full.e, aes(x=sil.risk, y=score))+
   geom_boxplot(outlier.shape = NA)+
   geom_point(aes(color=Case))+
@@ -1281,17 +1299,22 @@ ggplot(full.e, aes(x=sil.risk, y=score))+
                    labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
   labs(x=element_blank(),
        color="Case",
-       y="4 Gene Risk Score")
+       y="4 Gene Risk Score")+
+  stat_pvalue_manual(stat, y.position = c(3,1,2.8,3.3), label= "p.adj.signif", hide.ns = TRUE)
+
+#ggsave("4genescore.png", path=path)
 
 ############### plots genes stroma ##################
 
 full.s <- full[full$Compartment=="stroma",]
 
-stroma.genes ##id'ed by pathways
+#stroma.genes ##id'ed by pathways
 #"SFRP2" , "MMP9",   "OLR1"    "FN1" #CTHRC1 ###HK3 excluding case 18418
 #"IL1RN"    "CHIT1" "HK3" ## not as good of a separation
 
 
+
+stat <- wilcox_test(full.s, CTHRC1~sil.risk)%>% add_significance()
 
 p1 <- ggplot(full.s, aes(x=sil.risk, y=CTHRC1))+
   geom_boxplot(outlier.shape = NA)+
@@ -1303,10 +1326,11 @@ p1 <- ggplot(full.s, aes(x=sil.risk, y=CTHRC1))+
                    labels=c("Benign", "A", "B Low", "B High", "C"))+
   labs(x=element_blank(),
        color="Case",
-       y="CTHRC1 Z-score")+ theme(legend.position = "none")
+       y="CTHRC1 Z-score")+ theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position = c(3.5,1,3.2,2.7,3.9,4.2), label= "p.adj.signif", hide.ns = TRUE)
 
 
-p2 <- ggplot(full.s, aes(x=sil.risk, y=SFRP2))+
+ggplot(full.s, aes(x=sil.risk, y=SFRP2))+
   geom_boxplot(outlier.shape = NA)+
   geom_point(aes(color=Case))+
   scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
@@ -1318,7 +1342,10 @@ p2 <- ggplot(full.s, aes(x=sil.risk, y=SFRP2))+
        color="Case",
        y="SFRP2 Z-score")+ theme(legend.position = "none")
 
-p3 <- ggplot(full.s, aes(x=sil.risk, y=MMP9))+
+
+stat <- wilcox_test(full.s, MMP9~sil.risk)%>% add_significance()
+
+p2 <- ggplot(full.s, aes(x=sil.risk, y=MMP9))+
   geom_boxplot(outlier.shape = NA)+
   geom_point(aes(color=Case))+
   scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
@@ -1328,7 +1355,8 @@ p3 <- ggplot(full.s, aes(x=sil.risk, y=MMP9))+
                    labels=c("Benign", "A", "B Low", "B High", "C"))+
   labs(x=element_blank(),
        color="Case",
-       y="MMP9 Z-score")
+       y="MMP9 Z-score")+ theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position = c(2.3,3.1), hide.ns = TRUE, label="p.adj.signif")
 
 p4 <- ggplot(full.s, aes(x=sil.risk, y=OLR1))+
   geom_boxplot(outlier.shape = NA)+
@@ -1366,11 +1394,30 @@ ggplot(full.s, aes(x=sil.risk, y=C3))+
   scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
                    labels=c("Benign", "A", "B Low", "B High", "C"))+
   labs(x=element_blank(),
-       color="Case")
+       color="Case")+theme(legend.position = "bottom")
+
+ggsave("legend.png", path=path)
 
 
+stat <- wilcox_test(full.s, CD68~sil.risk)%>% add_significance()
+
+p7 <- ggplot(full.s, aes(x=sil.risk, y=CD68))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="CD68 Z-score")+ theme(legend.position = "none")+
+  stat_pvalue_manual(stat, y.position=c(2.6,3.5,2.3,3,3.3,3.7), hide.ns=TRUE, lable="p.adj.signif")
 
 
+p1|p2|p7
+
+ggsave("selectStromaGenes.png", path=path)
 
 sub1 <- full.s[full.s$Case!="18418",]
 
