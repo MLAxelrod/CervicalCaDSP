@@ -229,7 +229,7 @@ summary(full$score)
 #four gene
 
 full <- mutate(full, SCOREgroup=ifelse(full$score>-0.3076, "high", "low"))
-full <- mutate(full, SCOREgroup=ifelse(full$score>-0.1380, "high", "low"))
+#full <- mutate(full, SCOREgroup=ifelse(full$score>-0.1380, "high", "low"))
 
 
 #stroma 
@@ -241,7 +241,7 @@ full <- mutate(full, SCOREgroup=ifelse(full$score>-0.1200, "high", "low"))
 fit<-survfit(Surv(OS_months, OS_stat_num) ~ SCOREgroup, data=full)
 ggsurvplot(fit,
            data=full,
-           pval = TRUE, pval.coord=c(40,0.1),
+           pval = TRUE, pval.coord=c(20,0.1),
            risk.table = TRUE, 
            risk.table.col = "strata", 
            censor.shape=124,
@@ -249,7 +249,11 @@ ggsurvplot(fit,
            font.y=14, font.x=14, font.tickslab="black",
            legend.title=element_blank(),
            tables.theme = theme_cleantable(),
-           fontsize=4,tables.y.text=FALSE)
+           fontsize=4,tables.y.text=FALSE,
+           tables.col="black",
+           palette = c("#DC3220", "#005AB5"))
+
+
 
 
 

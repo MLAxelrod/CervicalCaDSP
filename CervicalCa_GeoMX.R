@@ -1,8 +1,6 @@
 ##CervicalCancer
 ##GeoMX DSP
 
-###need to make this a renv project ; on reopen some of my packages were gone??
-
 library(ggplot2)
 library(rstatix)
 library(ggpubr)
@@ -48,6 +46,8 @@ table(meta$ptrisk)
 meta$sil.risk <- paste(meta$Silva, meta$Risk, sep=".")
 table(meta$sil.risk, meta$Case)
 
+#Reassign Case ID
+meta$CaseID <- revalue(as.character(meta$Case), c("8522" = "WU-01", "11911" = "WU-05", "15381"= "WU-02", "18418"="WU-06", "27635" = "WU-07", "34511"="WU-04", "53047"="WU-03"))
 
 
 data <- read.csv("C:/Users/marga/Desktop/CCa_GEOMX/data/filtered.norm.counts.linear.formated.csv", row.names = 1)
@@ -58,7 +58,6 @@ all(rownames(meta)==colnames(counts)) ##data to metadata matching
 
 #Hallmarks pathways downloaded from database for GSEA
 pathways<- gmtPathways("C:/Users/marga/Desktop/CCa_GEOMX/data/h.all.v2024.1.Hs.symbols.gmt")
-
 
 
 ##Log transform
@@ -120,11 +119,332 @@ autoplot(pca, data= pcadata, colour="Silva", shape="Risk")
 #ggsave("pca_caserisk_stroma.png", path=path)
 
 
+########### Plot individual genes #####################
+
+all(rownames(meta)==colnames(data)) 
+
+meta$Case <- as.character(meta$Case)
+
+full <- cbind(meta, as.data.frame(t(scaleRow(data)))) #with Z score
+
+#full <- cbind(meta, as.data.frame(t(data))) # no z score
+
+full$ID2 <- NULL
+###really just get rid of this in metadata
+
+full.e <- full[full$Compartment=="epi",]
+
+ggplot(full.e, aes(x= sil.risk, y= SERPINA3))+
+  geom_boxplot(outlier.shape = NA, aes(color=Case))+
+  #  geom_point(aes(color=Case))+
+  #  geom_line(aes(group=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low Risk", "B High Risk", "C"))+
+  labs(x=element_blank(),
+       color="Case")
+
+
+stat <- wilcox_test(full.e, KRT6A~sil.risk)
+
+p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="KRT6A Z-score",
+       color="Case",
+       title="KRT6A")+
+  theme(legend.position = "none", plot.title= element_text(face="bold", hjust=0.5))+
+  stat_pvalue_manual(stat, y.position = c(2.3,1.8,2.5,3,2.7,3.7), hide.ns = TRUE, label="p.adj.signif")
 
 
 
-###DESeq####
+stat <- wilcox_test(full.e, TNC~sil.risk)
 
+p2 <- ggplot(full.e, aes(x=sil.risk, y=TNC))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="TNC Z-score",
+       color="Case",
+       title="TNC")+
+  theme(legend.position = "none", plot.title= element_text(face="bold", hjust=0.5))+
+  stat_pvalue_manual(stat, y.position = c(1.8,2,2.3), hide.ns = TRUE, label="p.adj.signif")
+
+stat <- wilcox_test(full.e, SERPINA3 ~ sil.risk)
+
+p3 <- ggplot(full.e, aes(x=sil.risk, y=SERPINA3))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="SERPINA3 Z-score",
+       color="Case",
+       title="SERPINA3")+
+  theme(legend.position = "none", plot.title= element_text(face="bold", hjust=0.5))+
+  stat_pvalue_manual(stat, hide.ns = TRUE, label= "p.adj.signif", y.position = c(2.9, 4.3 , 4.6))
+
+
+stat <- wilcox_test(full.e, LAMC2~sil.risk)
+
+p4 <- ggplot(full.e, aes(x=sil.risk, y=LAMC2))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="LAMC2 Z-score",
+       color="Case",
+       title="LAMC2")+
+  theme(legend.position = "none", plot.title= element_text(face="bold", hjust=0.5))+
+  stat_pvalue_manual(stat, y.position = c(2,2.7,3.7), hide.ns = TRUE, label="p.adj.signif")
+
+
+stat <- wilcox_test(full.e, FN1~sil.risk)
+p5 <- ggplot(full.e, aes(x=sil.risk, y=FN1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="FN1 Z-score",
+       color="Case",
+       title="FN1")+
+  theme(legend.position = "none", plot.title= element_text(face="bold", hjust=0.5))+
+  stat_pvalue_manual(stat, y.position = c(2, 1.6, 1.8), hide.ns = TRUE, label="p.adj.signif")
+
+stat <- wilcox_test(full.e, CCND1 ~sil.risk)
+
+p6 <- ggplot(full.e, aes(x=sil.risk, y=CCND1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="CCND1 Z-score",
+       color="Case", title = "CCND1")+
+  theme(legend.position = "none", plot.title= element_text(face="bold", hjust=0.5))+
+  stat_pvalue_manual(stat, y.position = c(3.5, 2.4, 3.1, 2.7), hide.ns = TRUE, label="p.adj.signif")
+
+###Figure 2B
+
+(p1+p2+p3)/(p4+p5+p6)
+
+#ggsave("EPI6sharedgenes_0616.png", path=path)
+p6+theme(legend.position="bottom")
+#ggsave("legend_cases.png", path=path)
+
+
+p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="KRT6A",
+       color="Case")+
+  theme(legend.position = "none")
+
+
+p2 <- ggplot(full.e, aes(x=sil.risk, y=KRT5))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=Case))+
+  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
+                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
+                                "8522"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       y="KRT5",
+       color="Case")+
+  theme(legend.position = "none")
+
+
+p1|p2
+#ggsave("CK56.png", path=path)
+
+############Four gene risk score###################
+risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC")
+risk.data <- full.e[,colnames(full.e) %in% risk.genes]
+risk.data$score <- rowSums(risk.data)/length(risk.genes)
+full.e$score <- risk.data$score
+
+stat <- wilcox_test(full.e, score~sil.risk)%>% add_significance()
+
+ggplot(full.e, aes(x=sil.risk, y=score))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="4 Gene Risk Score",
+       title="4 Gene Risk Score")+
+  stat_pvalue_manual(stat, y.position = c(3.1,1,2.8,2,3.3), label= "p.adj.signif", hide.ns = TRUE)+
+  theme(plot.title=element_text(hjust=0.5, face="bold"),legend.position = "bottom")
+
+####Figure 5A
+#ggsave("4genescore_0616.png", path=path)
+
+############### plots genes stroma ##################
+
+full.s <- full[full$Compartment=="stroma",]
+
+#stroma.genes ##id'ed by pathways
+#"SFRP2" , "MMP9",   "OLR1"    "FN1" #CTHRC1 ###HK3 excluding case 18418
+#"IL1RN"    "CHIT1" "HK3" ## not as good of a separation
+
+
+
+stat <- wilcox_test(full.s, CD68~sil.risk)%>% add_significance()
+
+p1 <- ggplot(full.s, aes(x=sil.risk, y=CD68))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="CD68 Z-score",
+       title="CD68")+
+  theme(legend.position = "none", plot.title=element_text(hjust=0.5, face="bold"))+
+  stat_pvalue_manual(stat, y.position=c(2.6,3.5,2.3,3,3.3,3.7), hide.ns=TRUE, lable="p.adj.signif")
+
+
+
+stat <- wilcox_test(full.s, CTHRC1~sil.risk)%>% add_significance()
+
+p2 <- ggplot(full.s, aes(x=sil.risk, y=CTHRC1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="CTHRC1 Z-score",
+       title="CTHRC1")+
+  theme(legend.position = "none", plot.title=element_text(hjust=0.5, face="bold"))+
+  stat_pvalue_manual(stat, y.position = c(3.5,1,3.2,2.7,3.9), label= "p.adj.signif", hide.ns = TRUE)
+
+
+
+stat <- wilcox_test(full.s, SFRP2~sil.risk)%>% add_significance()
+
+p3 <- ggplot(full.s, aes(x=sil.risk, y=SFRP2))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="SFRP2 Z-score",
+       title="SFRP2")+
+  theme(legend.position = "none", plot.title=element_text(hjust=0.5, face="bold"))+
+  stat_pvalue_manual(stat, y.position = c(3.5,2.2,2.6,3), label= "p.adj.signif", hide.ns = TRUE)
+
+
+stat <- wilcox_test(full.s, MMP9~sil.risk)%>% add_significance()
+
+p4 <- ggplot(full.s, aes(x=sil.risk, y=MMP9))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="MMP9 Z-score",
+       title="MMP9")+ 
+  theme(legend.position = "none", plot.title=element_text(hjust=0.5, face="bold"))+
+  stat_pvalue_manual(stat, y.position = c(2.3,3.1,3.3), hide.ns = TRUE, label="p.adj.signif")
+
+stat <- wilcox_test(full.s, FN1~sil.risk)%>% add_significance()
+
+p5 <- ggplot(full.s, aes(x=sil.risk, y=FN1))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="FN1 Z-score",
+       title="FN1")+
+  theme(legend.position = "none", plot.title=element_text(hjust=0.5, face="bold"))+
+  stat_pvalue_manual(stat, y.position = c(2.3,3.5,1.7,2,2.7,2.8,3.1), hide.ns = TRUE, label="p.adj.signif")
+
+
+stat <- wilcox_test(full.s, POSTN~sil.risk)%>% add_significance()
+
+p6 <- ggplot(full.s, aes(x=sil.risk, y=POSTN))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_point(aes(color=CaseID))+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
+  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
+                   labels=c("Benign", "A", "B Low", "B High", "C"))+
+  labs(x=element_blank(),
+       color="Case",
+       y="POSTN Z-score",
+       title="POSTN")+
+  theme(legend.position = "none", plot.title=element_text(hjust=0.5, face="bold"))+
+  stat_pvalue_manual(stat, y.position = c(3.6,3.2,3.4,3.8), hide.ns = TRUE, label="p.adj.signif")
+ggsave("legend.png", path=path)
+
+
+####FIGURE 3B
+(p1+p2+p3)/(p4+p5+p6)
+
+#ggsave("selectStromaGenes2.png", path=path)
+
+
+##################################################
+########DESeq on whole dataset##############
 
 ##### epithelium v stroma ####
 #mainly a proof of concept that there are expected differences in these compartments
@@ -1111,370 +1431,3 @@ Heatmap(z,
 
 
 #############################################################
-########### plots some individual genes #####################
-
-all(rownames(meta)==colnames(data)) 
-
-meta$Case <- as.character(meta$Case)
-
-full <- cbind(meta, as.data.frame(t(scaleRow(data)))) #with Z score
-
-#full <- cbind(meta, as.data.frame(t(data))) # no z score
-
-full$ID2 <- NULL
-###really just get rid of this in metadata
-
-full.e <- full[full$Compartment=="epi",]
-
-ggplot(full.e, aes(x= sil.risk, y= SERPINA3))+
-  geom_boxplot(outlier.shape = NA, aes(color=Case))+
-#  geom_point(aes(color=Case))+
-#  geom_line(aes(group=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low Risk", "B High Risk", "C"))+
-  labs(x=element_blank(),
-       color="Case")
-
-
-stat <- wilcox_test(full.e, KRT6A~sil.risk)
-
-p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="KRT6A Z-score",
-       color="Case")+
-  theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position = c(2.3,3.7), hide.ns = TRUE, label="p.adj.signif")
-
-
-stat <- wilcox_test(full.e, TNC~sil.risk)
-
-p2 <- ggplot(full.e, aes(x=sil.risk, y=TNC))+
-  geom_boxplot(outlier.shape = NA)+
-    geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="TNC Z-score",
-       color="Case")+
-  theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position = c(2,2.5), hide.ns = TRUE, label="p.adj.signif")
-
-stat <- wilcox_test(full.e, SERPINA3 ~ sil.risk)
-
-p3 <- ggplot(full.e, aes(x=sil.risk, y=SERPINA3))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="SERPINA3 Z-score",
-       color="Case")+
-  theme(legend.position = "none")+
-  stat_pvalue_manual(stat, hide.ns = TRUE, label= "p.adj.signif", y.position = c(2.9, 3.7 , 4.1, 3.4, 4.3, 4.6))
-
-
-stat <- wilcox_test(full.e, LAMC2~sil.risk)
-
-p4 <- ggplot(full.e, aes(x=sil.risk, y=LAMC2))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="LAMC2 Z-score",
-       color="Case")+
-  theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position = c(2,2.7,3.7), hide.ns = TRUE, label="p.adj.signif")
-
-
-stat <- wilcox_test(full.e, FN1~sil.risk)
-p5 <- ggplot(full.e, aes(x=sil.risk, y=FN1))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="FN1 Z-score",
-       color="Case")+
-  theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position = c(2, 1.6, 1.8 ,2.2), hide.ns = TRUE, label="p.adj.signif")
-
-stat <- wilcox_test(full.e, CCND1 ~sil.risk)
-
-p6 <- ggplot(full.e, aes(x=sil.risk, y=CCND1))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="CCND1 Z-score",
-       color="Case")+
-  theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position = c(2, 3.8, 2.5, 3.5, 3), hide.ns = TRUE, label="p.adj.signif")
-
-
-
-(p1+p2+p3)/(p4+p5+p6)
-#ggsave("EPI6sharedgenes.png", path=path)
-
-
-
-p1 <- ggplot(full.e, aes(x=sil.risk, y=KRT6A))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="KRT6A",
-       color="Case")+
-  theme(legend.position = "none")
-
-
-p2 <- ggplot(full.e, aes(x=sil.risk, y=KRT5))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       y="KRT5",
-       color="Case")+
-  theme(legend.position = "none")
-
-
-p1|p2
-
-#ggsave("CK56.png", path=path)
-
-
-risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC")
-
-
-risk.data <- full.e[,colnames(full.e) %in% risk.genes]
-
-risk.data$score <- rowSums(risk.data)/length(risk.genes)
-
-full.e$score <- risk.data$score
-
-
-stat <- wilcox_test(full.e, score~sil.risk)%>% add_significance()
-
-ggplot(full.e, aes(x=sil.risk, y=score))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
-  labs(x=element_blank(),
-       color="Case",
-       y="4 Gene Risk Score")+
-  stat_pvalue_manual(stat, y.position = c(3,1,2.8,3.3), label= "p.adj.signif", hide.ns = TRUE)
-
-#ggsave("4genescore.png", path=path)
-
-############### plots genes stroma ##################
-
-full.s <- full[full$Compartment=="stroma",]
-
-#stroma.genes ##id'ed by pathways
-#"SFRP2" , "MMP9",   "OLR1"    "FN1" #CTHRC1 ###HK3 excluding case 18418
-#"IL1RN"    "CHIT1" "HK3" ## not as good of a separation
-
-
-
-stat <- wilcox_test(full.s, CTHRC1~sil.risk)%>% add_significance()
-
-p1 <- ggplot(full.s, aes(x=sil.risk, y=CTHRC1))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case",
-       y="CTHRC1 Z-score")+ theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position = c(3.5,1,3.2,2.7,3.9,4.2), label= "p.adj.signif", hide.ns = TRUE)
-
-
-ggplot(full.s, aes(x=sil.risk, y=SFRP2))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case",
-       y="SFRP2 Z-score")+ theme(legend.position = "none")
-
-
-stat <- wilcox_test(full.s, MMP9~sil.risk)%>% add_significance()
-
-p2 <- ggplot(full.s, aes(x=sil.risk, y=MMP9))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case",
-       y="MMP9 Z-score")+ theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position = c(2.3,3.1), hide.ns = TRUE, label="p.adj.signif")
-
-p4 <- ggplot(full.s, aes(x=sil.risk, y=OLR1))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case",
-       y="OLR1 Z-score")+ theme(legend.position = "none")
-
-
-p5 <- ggplot(full.s, aes(x=sil.risk, y=FN1))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case",
-       y="FN1 Z-score")+ theme(legend.position = "none")
-
-
-
-ggplot(full.s, aes(x=sil.risk, y=C3))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case")+theme(legend.position = "bottom")
-
-ggsave("legend.png", path=path)
-
-
-stat <- wilcox_test(full.s, CD68~sil.risk)%>% add_significance()
-
-p7 <- ggplot(full.s, aes(x=sil.risk, y=CD68))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case",
-       y="CD68 Z-score")+ theme(legend.position = "none")+
-  stat_pvalue_manual(stat, y.position=c(2.6,3.5,2.3,3,3.3,3.7), hide.ns=TRUE, lable="p.adj.signif")
-
-
-p1|p2|p7
-
-ggsave("selectStromaGenes.png", path=path)
-
-sub1 <- full.s[full.s$Case!="18418",]
-
-p6 <- ggplot(sub1, aes(x=sil.risk, y=HK3))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_point(aes(color=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Benign", "A", "B Low", "B High", "C"))+
-  labs(x=element_blank(),
-       color="Case", 
-       y="HK3 Z-score")+ theme(legend.position = "none")
-
-
-
-(p1+p2+p3)/(p4+p5+p6)
-
-
-#ggsave("stroma_sixgenes.png", path=path)
-
-
-
-####################################
-df <- full.e
-
-
-sepa3 <- df %>% 
-  group_by(Case, sil.risk) %>% 
-  summarize(mean = mean(SERPINA3),
-            min = min(SERPINA3),
-            max = max(SERPINA3), 
-            q1= quantile(SERPINA3, 0.25),
-            q3=quantile(SERPINA3, 0.75))
-
-ggplot(sepa3, aes(x= sil.risk, y=mean, color=Case))+
-  geom_boxplot(aes(lower = q1, upper = q3, middle = mean, ymin= min, ymax = max), stat="identity")+
-#  geom_line(aes(group=Case))+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
-  labs(x=element_blank(), y="SERPINA3 Z-score")
-  
-
-
-ggplot(sepa3, aes(x= sil.risk, y=mean, color=Case))+
-  geom_line(aes(group=Case))+
-  geom_point()+
-  scale_color_manual(values = c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                "8522"= "#DEA0FD"))+
-  scale_x_discrete(limits=c("normal.Normal", "A.Low", "B.Low", "B.High", "C.High"),
-                   labels=c("Normal", "A", "B Low Risk", "B High Risk", "C"))+
-  labs(x=element_blank(), y="SERPINA3 Z-score")
-
-
-###do fold change on these 

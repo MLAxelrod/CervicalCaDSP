@@ -407,131 +407,7 @@ sig<-na.omit(sig)
 
 p11.BvNormEpi <- sig
 
-#GO & KEGG analysis
-
-p11.upCvBepi <- p11.CvBepi[p11.CvBepi$log2FoldChange>1,]
-
-##Try alternative pathway tools
-library(clusterProfiler)
-library(org.Hs.eg.db)
-keytypes(org.Hs.eg.db)
-
-ggo <- groupGO(gene     = p11.upCvBepi$gene,
-               OrgDb    = org.Hs.eg.db,
-               ont      = "CC",
-               level    = 3,
-               readable = TRUE,
-               keyType = "SYMBOL")
-
-ego <- enrichGO(gene          = p11.upCvBepi$gene,
-#                universe      = names(geneList),
-                OrgDb         = org.Hs.eg.db,
-                ont           = "MF",
-                pAdjustMethod = "BH",
-                pvalueCutoff  = 0.01,
-                qvalueCutoff  = 0.05,
-                readable      = TRUE,
-                keyType = "SYMBOL")
-
-
-goplot(ego)+labs(title="pt11 up in C vs B epithelium, GO:MF terms")
-#ggsave("p11_CvBepi_GOMF.png", path=path)
-
-
-###Heatmaps
-p11.genes <- unique(c(p11.CvBepi$gene[1:40], p11.CvNormEpi$gene[1:40], p11.BvNormEpi$gene[1:40]))
-
-#p11.genes <- unique(c(p11.CvBepi$gene[1:100]))
-### heatmaps
-
-p11h <- data.p11.e[rownames(data.p11.e) %in% p11.genes,]
-z<-na.omit(scaleRow(p11h))
-
-ann <- data.frame(Silva=meta.p11.e[["Silva"]])
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B")))
-
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = TRUE,  row_names_gp = gpar(fontsize=8),
-        show_column_names = FALSE, show_row_dend = TRUE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-
-##Apply p11 genes to whole dataset... not sure this analysis makes sense to do
-h <- data.epi[rownames(data.epi) %in% p11.genes,]
-z<-na.omit(scaleRow(h))
-ann <- data.frame(Risk=meta.epi[["Risk"]], Silva=meta.epi[["Silva"]], Patient= as.character(meta.epi[["Case"]]))
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B"),
-                                 Risk= c("Low"= "#DEA0FD",
-                                         "High"="#F6222E", "Normal"="#325A9B"),
-                                 Patient= c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                            "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                            "8522"= "#DEA0FD")))
-
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = TRUE,  row_names_gp = gpar(fontsize=7),
-        show_column_names = FALSE, show_row_dend = FALSE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-
-###GO on UP IN C EPI in p11
-upvB <- p11.CvBepi[p11.CvBepi$log2FoldChange>1,]
-upvN <- p11.CvNormEpi[p11.CvNormEpi$log2FoldChange>1,]
-upC <- unique(c(upvB$gene, upvN$gene))
-
-gostres <- gost(query=upC, organism = "hsapiens", ordered_query = FALSE, 
-                multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
-                #                sources= c("REAC", "GO:BP", "WP", "KEGG", "GO:MF", "GO:CC"),
-                sources= c("REAC", "KEGG"),
-                evcodes = TRUE)
-
-gostplot(gostres, capped = FALSE, interactive = TRUE)
-
-foo4 <- gostres$result
-
-terms <- c("GO:0031982", "GO:0070062", "GO:0002376", "REAC:R-HSA-168256", "GO:0001816", "GO:0006955", "REAC:R-HSA-1280215",
-           "WP:WP3888", "REAC:R-HSA-877300", "KEGG:04612", "GO:0048518", "GO:0007155", "GO:0005515",
-           "GO:0050839","GO:0045296")
-
-publish_gosttable(gostres, highlight_terms = terms,
-                  use_colors = TRUE, 
-                  show_columns = c("source", "term_name", "term_size", "intersection_size"),
-                  filename = NULL)
-
-
-p <- gostplot(gostres, capped = FALSE, interactive = FALSE)
-
-pp <- publish_gostplot(p, highlight_terms = terms, 
-                       width = NA, height = NA, filename = NULL )+ labs(title = "Pt 11911, Up in Silva C Epithelium")
-#ggsave("pt11_GO_upinSilvaCepi.png", path=path)
-
-
-#get genes in interesting terms
-foo5 <- foo4[foo4$term_id %in% terms,]
-foo6 <- c(foo5$intersection[1:15])
-foo7 <- unlist(strsplit(foo6, split=","))
-foo8 <- unique(foo7)
-
-
-p11h <- data.p11.e[rownames(data.p11.e) %in% genes.epi.keggreac,]
-z<-na.omit(scaleRow(p11h))
-ann <- data.frame(Silva=meta.p11.e[["Silva"]])
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B")))
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = FALSE,  row_names_gp = gpar(fontsize=4),
-        show_column_names = FALSE, show_row_dend = FALSE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-### immune and adhesion pathways up in C in pt 11 epithelium
-
+#p11.upCvBepi <- p11.CvBepi[p11.CvBepi$log2FoldChange>1,]
 
 ##pt 11 stroma
 dds <- DESeqDataSetFromMatrix(countData = counts.p11.s,
@@ -619,144 +495,6 @@ sig<-result[result$padj<0.1,]
 sig<-na.omit(sig)
 p11.BvNormStroma <- sig
 
-
-####GO KEGG on PT11911 stroma
-p11.genes.stroma <- unique(c(p11.CvBstroma$gene[1:40], p11.CvNormStroma$gene[1:40], p11.BvNormStroma$gene[1:40]))
-
-up <- p11.CvNormStroma[p11.CvNormStroma$log2FoldChange>0.5,]
-down <- p11.CvNormStroma[p11.CvNormStroma$log2FoldChange<0,]
-
-#GO & KEGG analysis
-gostres <- gost(query=down$gene, organism = "hsapiens", ordered_query = FALSE, 
-                multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
-                sources= c("REAC", "GO:BP", "WP", "KEGG", "GO:MF", "GO:CC"))
-
-gostplot(gostres, capped = FALSE, interactive = TRUE)
-foo4 <- gostres$result
-
-terms <- c("GO:0002376", "GO:0002682", "GO:0001775", "GO:0007155", "GO:0045321", "GO:0042110",
-           "REAC:R-HSA-168256", "GO:0005515", "	REAC:R-HSA-168249", "REAC:R-HSA-1280215", 
-           "KEGG:04145", "KEGG:04612")
-
-publish_gosttable(gostres, highlight_terms = terms,
-                  use_colors = TRUE, 
-                  show_columns = c("source", "term_name", "term_size", "intersection_size"),
-                  filename = NULL)
-
-
-p <- gostplot(gostres, capped = FALSE, interactive = FALSE)
-
-pp <- publish_gostplot(p, highlight_terms = terms, 
-                       width = NA, height = NA, filename = NULL )+ labs(title = "Pt 11911, Silva C vs. Normal in Stroma")
-
-#ggsave("p11_GO_CvNorm_stroma_condense.png", path=path)
-
-p11h <- data.p11.s[rownames(data.p11.s) %in% p11.genes.stroma,]
-#p11h <- data.p11.s[rownames(data.p11.s) %in% genes.stroma.keggreac,]
-z<-na.omit(scaleRow(p11h))
-
-ann <- data.frame(Silva=meta.p11.s[["Silva"]])
-
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B")))
-
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = FALSE,  row_names_gp = gpar(fontsize=6),
-        show_column_names = FALSE, show_row_dend = FALSE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-
-
-h <- data.stroma[rownames(data.stroma) %in% p11.genes.stroma,]
-z<-na.omit(scaleRow(h))
-ann <- data.frame(Risk=meta.stroma[["Risk"]], Silva=meta.stroma[["Silva"]], Patient= as.character(meta.stroma[["Case"]]))
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B"),
-                                 Risk= c("Low"= "#DEA0FD",
-                                         "High"="#F6222E", "Normal"="#325A9B"),
-                                 Patient= c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                            "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                            "8522"= "#DEA0FD")))
-
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = TRUE,  row_names_gp = gpar(fontsize=7),
-        show_column_names = FALSE, show_row_dend = FALSE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-
-##pt 11 cancer vs normal
-dds <- DESeqDataSetFromMatrix(countData = counts.p11.s,
-                              colData = meta.p11.s,
-                              design= ~ cancer)
-
-
-dds$cancer <- relevel(dds$cancer, ref = "Normal")
-
-dds<-DESeq(dds)
-resultsNames(dds)
-
-res<-DESeq2::results(dds, name="cancer_Cancer_vs_Normal")
-res<-lfcShrink(dds, coef="cancer_Cancer_vs_Normal", type="apeglm" )
-resOrdered <- res[order(res$pvalue),]
-summary(res)
-result<-as.data.frame(resOrdered)
-
-
-result$gene <- rownames(result)
-
-ggplot(result, aes(x=log2FoldChange, y=-log10(padj)))+
-  geom_point()+
-  geom_hline(yintercept = -log10(0.05), linetype="dashed")+
-  geom_vline(xintercept =0, linetype="dashed")+
-  geom_text_repel(data=head(result[result$padj<0.1,],50), aes(label=gene))+
-  labs(x="Log2 Fold Change",
-       y= "-Log10(adj. p-value)",
-       title="Patient 11911, Cancer vs Normal in Stroma")
-
-#ggsave("p11_CavNormStroma_volc.png", path=path)
-
-sig<-result[result$padj<0.1,]
-sig<-na.omit(sig)
-p11.CancervNormStroma <- sig
-
-##pt 11 cancer vs normal
-dds <- DESeqDataSetFromMatrix(countData = counts.p11.e,
-                              colData = meta.p11.e,
-                              design= ~ cancer)
-
-
-dds$cancer <- relevel(dds$cancer, ref = "Normal")
-
-dds<-DESeq(dds)
-resultsNames(dds)
-
-res<-DESeq2::results(dds, name="cancer_Cancer_vs_Normal")
-res<-lfcShrink(dds, coef="cancer_Cancer_vs_Normal", type="apeglm" )
-resOrdered <- res[order(res$pvalue),]
-summary(res)
-result<-as.data.frame(resOrdered)
-
-
-result$gene <- rownames(result)
-
-ggplot(result, aes(x=log2FoldChange, y=-log10(padj)))+
-  geom_point()+
-  geom_hline(yintercept = -log10(0.05), linetype="dashed")+
-  geom_vline(xintercept =0, linetype="dashed")+
-  geom_text_repel(data=head(result[result$padj<0.1,],50), aes(label=gene))+
-  labs(x="Log2 Fold Change",
-       y= "-Log10(adj. p-value)",
-       title="Patient 11911, Cancer vs Normal in Epithelium")
-
-#ggsave("p11_CavNormepi_volc.png", path=path)
-
-sig<-result[result$padj<0.1,]
-sig<-na.omit(sig)
-p11.CancervNormepi <- sig
 
 
 ####################################################
@@ -885,84 +623,6 @@ sig<-na.omit(sig)
 p34.AvNormEpi <- sig
 
 
-####GO KEGG on PT34 comparisions and do stroma comparisons 
-
-
-p34.genes <- unique(c(p34.BvAepi$gene[1:40], p34.BvNormEpi$gene[1:40], p34.AvNormEpi$gene[1:40]))
-
-#p34.genes <- unique(c(p11.CvBepi$gene[1:100]))
-### heatmaps
-
-p34h <- data.p34.e[rownames(data.p34.e) %in% p34.genes,]
-z<-na.omit(scaleRow(p34h))
-
-ann <- data.frame(Silva=meta.p34.e[["Silva"]])
-
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B")))
-
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = TRUE,  row_names_gp = gpar(fontsize=8),
-        show_column_names = FALSE, show_row_dend = TRUE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-
-###GO on UP IN B
-upvA <- p34.BvAepi[p34.BvAepi$log2FoldChange>1,]
-upvN <- p34.BvNormEpi[p34.BvNormEpi$log2FoldChange>1,]
-upB <- unique(c(upvA$gene, upvN$gene))
-
-gostres <- gost(query=upB, organism = "hsapiens", ordered_query = FALSE, 
-                multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
-                sources= c("REAC", "GO:BP", "WP", "KEGG", "GO:MF", "GO:CC"),
-                evcodes = TRUE)
-
-##evcodes returns gene list but is slower
-
-gostplot(gostres, capped = FALSE, interactive = TRUE)
-
-foo4 <- gostres$result
-
-terms <- c("GO:0070062", "GO:0005515", "REAC:R-HSA-69278", "REAC:R-HSA-1640170", 
-           "GO:0000278", "GO:0007049")
-
-
-publish_gosttable(gostres, highlight_terms = terms,
-                  use_colors = TRUE, 
-                  show_columns = c("source", "term_name", "term_size", "intersection_size"),
-                  filename = NULL)
-
-
-p <- gostplot(gostres, capped = FALSE, interactive = FALSE)
-
-pp <- publish_gostplot(p, highlight_terms = terms, 
-                       width = NA, height = NA, filename = NULL )
-
-
-pp + labs(title = "Pt 34511, Up in Silva B Epithelium")
-#ggsave("pt34_GO_upinSilvaBepi.png", path=path)
-
-
-foo5 <- foo4[foo4$term_id %in% terms,]
-foo6 <- c(foo5$intersection[1:15])
-foo7 <- unlist(strsplit(foo6, split=","))
-foo8 <- unique(foo7)
-
-p34h <- data.p34.e[rownames(data.p34.e) %in% foo8,]
-z<-na.omit(scaleRow(p34h))
-ann <- data.frame(Silva=meta.p34.e[["Silva"]])
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B")))
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = FALSE,  row_names_gp = gpar(fontsize=6),
-        show_column_names = FALSE, show_row_dend = FALSE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-### cell cycle genes up in pt 34 cancer v normal
 
 #####pt 34 stroma###
 dds <- DESeqDataSetFromMatrix(countData = counts.p34.s,
@@ -1126,160 +786,6 @@ sig<-result[result$padj<0.1,]
 sig<-na.omit(sig)
 p34.CancervNormStroma <- sig
 ##
-
-
-
-###look at p11, p53, p34 epi up in high-risk v low risk
-
-up.p11 <- p11.CvBepi[p11.CvBepi$log2FoldChange>1,]
-up.p53 <- p53.CvAepi[p53.CvAepi$log2FoldChange>1,]
-up.p34 <- p34.BvAepi[p34.BvAepi$log2FoldChange>1,]
-
-
-library(ggvenn)
-a <- list(pt11=up.p11$gene, pt53 = up.p53$gene, pt34 = up.p34$gene)
-ggvenn(a) + ggtitle("Shared genes up in high-risk vs low-risk epithelium")
-#ggsave("venn_upinhivlowepi.png", path=path)
-
-up.HI <- unique(c(up.p11$gene, up.p34$gene, up.p53$gene))
-#710 genes unique
-genes.up <- c(up.p11$gene, up.p34$gene, up.p53$gene)
-dups <- genes.up[duplicated(genes.up)]
-dups2 <- unique(dups)
-
-test <- as.data.frame(table(genes.up))
-all <- test[test$Freq>2,]
-
-
-###STROMA
-up.p11.s <- p11.CvBstroma[p11.CvBstroma$log2FoldChange>1,]
-up.p53.s <- p53.CvAstroma[p53.CvAstroma$log2FoldChange>1,]
-up.p34.s <- p34.BvAstroma[p34.BvAstroma$log2FoldChange>1,]
-
-
-b <- list(pt11=up.p11.s$gene, pt53 = up.p53.s$gene, pt34 = up.p34.s$gene)
-
-ggvenn(b) + ggtitle("Shared genes up in high-risk vs low-risk stroma")
-#ggsave("venn_upinhivlowstroma.png", path=path)
-
-
-up.HI.s <- unique(c(up.p11.s$gene, up.p34.s$gene, up.p53.s$gene))
-genes.up.s <- c(up.p11.s$gene, up.p34.s$gene, up.p53.s$gene)
-dups.s <- genes.up.s[duplicated(genes.up.s)]
-dups2.s <- unique(dups.s)
-
-test <- as.data.frame(table(genes.up.s))
-all <- test[test$Freq>2,] ##No shared genes for stroma all three
-
-
-########
-
-gostres <- gost(query=dups2.s, organism = "hsapiens", ordered_query = FALSE, 
-                multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
-                sources= c("REAC", "WP", "KEGG", "GO:MF"),
-                evcodes = TRUE)
-
-
-
-gostres <- gost(query=dups2, organism = "hsapiens", ordered_query = FALSE, 
-                multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
-                sources= c("REAC", "WP", "KEGG", "GO:MF"),
-                evcodes = TRUE)
-
-
-gostres <- gost(query=up.HI, organism = "hsapiens", ordered_query = FALSE, 
-                multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
-                sources= c("REAC", "WP", "KEGG", "GO:MF"),
-                evcodes = TRUE)
-
-
-gostplot(gostres, capped = FALSE, interactive = TRUE)
-
-foo4 <- gostres$result
-
-terms <- c("REAC:R-HSA-8957275", "GO:0005201", "REAC:R-HSA-381426", "GO:0043394", "REAC:R-HSA-1474228", "KEGG:04979", "WP:WP5323")
-#above for stroma
-
-
-terms <- c("REAC:R-HSA-1474244", "GO:0030414", "KEGG:04512", "GO:0050839", "REAC:R-HSA-6785807", "KEGG:05205",
-           "GO:0045236", "KEGG:04668", "KEGG:05165", "KEGG:04151")
-##above for epi
-
-
-publish_gosttable(gostres, highlight_terms = terms,
-                  use_colors = TRUE, 
-                  show_columns = c("source", "term_name", "term_size", "intersection_size"),
-                  filename = NULL)
-
-
-p <- gostplot(gostres, capped = FALSE, interactive = FALSE)
-
-pp <- publish_gostplot(p, highlight_terms = terms, 
-                       width = NA, height = NA, filename = NULL )+
-  labs(title = "Up in High-risk v Low-risk stroma in multiple cases")
-
-
-#ggsave("terms_upinHivLo_multicases.png", path=path)
-#ggsave("terms_upinHivLo_multicases_STROMA.png", path=path)
-
-
-#write.csv(dups2, file="C:/Users/marga/Desktop/CCa_GEOMX/GenesUpinHivLowEpi_multicase.csv")
-
-
-h <- data.epi[rownames(data.epi) %in% dups2,]
-z<-na.omit(scaleRow(h))
-ann <- data.frame(Risk=meta.epi[["Risk"]], Silva=meta.epi[["Silva"]], Patient= as.character(meta.epi[["Case"]]))
-a <- HeatmapAnnotation(df=ann, 
-                       col= list(Silva= c("A"= "#1CBE4F", "B" ="#B10DA1",
-                                          "C"="#FEAF16", "normal"="#325A9B"),
-                                 Risk= c("Low"= "#DEA0FD",
-                                         "High"="#F6222E", "Normal"="#325A9B"),
-                                 Patient= c("11911"="#F6222E", "15381"="#3283FE" , "18418"="#FEAF16", 
-                                            "27635"="#C4451C","34511"="#2ED9FF", "53047"="#1C8356",
-                                            "8522"= "#DEA0FD")))
-
-Heatmap(z, 
-        top_annotation = a,
-        show_row_names = TRUE,  row_names_gp = gpar(fontsize=7),
-        show_column_names = FALSE, show_row_dend = FALSE,
-        heatmap_legend_param = list(title="Row Z Score", title_position= "lefttop-rot"))
-
-
-
-
-##testing other methods on this gene list
-library(DOSE)
-library(enrichplot)
-
-
-dups3 <- bitr(dups2, fromType = "SYMBOL",
-                toType = "ENTREZID",
-                OrgDb = org.Hs.eg.db)
-
-edo <- enrichDGN(dups3$ENTREZID)
-
-dotplot(edo, showCategory=20)
-
-edox <- setReadable(edo, 'org.Hs.eg.db', 'ENTREZID')
-cnetplot(edox)
-heatplot(edox, showCategory = 5)
-
-edox2 <- pairwise_termsim(edox)
-treeplot(edox2)
-
-
-edo <- pairwise_termsim(edo)
-emapplot(edo)
-
-terms <- edo$Description[1:5]
-pmcplot(terms, 2010:2020)
-
-
-
-
-#############################################################################
-#### More patients #############
-#############################################################################
 
 ###########Patient 85 (8522)###############
 #A, low risk B and normal
@@ -1874,11 +1380,11 @@ p27.CancervNormStroma <- sig
 #################################
 
 
-########ADD p85 B v normal to do all most invasive vs least invasive 
 
 
-###Compare all worst pattern of invasion to less invasive
-#P85 Blo v A #P11 C vs Blo #P15 Blo v A #P34 Bhi v A #P53 Cv A
+##################################################################################
+##############Compare all worst pattern of invasion to less invasive################
+#P85 Blo v A #P11 C vs Bhi #P15 Blo v A #P34 Bhi v A #P53 Cv A
 
 #EPI
 up.p85 <- p85.BvAepi[p85.BvAepi$log2FoldChange>0.5,]
@@ -1909,6 +1415,7 @@ ggplot(test, aes(Freq)) + geom_histogram()+
 #### DO go on 3+ vs 2+
 
 up.hi.epi <- test[test$Freq>2,]
+#up.hi.epi <- test[test$Freq>1,]
 
 
 
@@ -1968,12 +1475,51 @@ ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
   ylim(1,15)+
   labs(x="Term Name",
        y="-Log10(p value)",
-       title= "Up in Worse Pattern of Invasion\nEpithelium in 3+ Patients",
+       title= "Up in Higher Risk\nEpithelium in 3+ Patients",
        color="Term\nSource",
        size="Intersection\nsize")
 
 
-#ggsave("terms_upinWorseEPIshared.png", path= path)
+#ggsave("terms_upinWorseEPIshared2.png", path= path)
+
+
+
+############ up in 2+ pts
+up.hi.epi <- test[test$Freq>1,]
+
+gostres <- gost(query=up.hi.epi$Var1, organism = "hsapiens", ordered_query = FALSE, 
+                multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
+                sources= c("REAC", "WP", "KEGG", "GO:MF"),
+                evcodes = TRUE)
+
+
+gostplot(gostres, capped = FALSE, interactive = TRUE)
+
+foo4 <- gostres$result
+
+terms <- c("GO:0050839", "GO:0005201", "KEGG:04512", "KEGG:04510", "KEGG:04151", "KEGG:05165", "REAC:R-HSA-1474244", "REAC:R-HSA-1474228", "REAC:R-HSA-216083")
+
+
+foo5 <- foo4[foo4$term_id %in% terms,]
+
+
+ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
+  geom_point(aes(size=intersection_size, color=source))+
+  coord_flip()+
+  scale_size(range = c(0,6), limits=c(10,75))+
+  scale_color_manual(values= c("#109618","#990099", "#3366cc"))+
+ ylim(1,35)+
+  labs(x="Term Name",
+       y="-Log10(p value)",
+       title= "Up in Higher Risk\nEpithelium in 2+ Patients",
+       color="Term\nSource",
+       size="Intersection\nsize")
+
+
+#ggsave("terms_upinWorseEPIshared2plus.png", path= path)
+
+
+
 
 
 #Heatmap
@@ -2072,7 +1618,7 @@ ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
   scale_fill_manual(values= c("#109618","#990099", "#3366cc", "#dc3912"))+
   labs(x="Term Name",
        y="-Log10(p value)",
-       title= "Up in Worse Pattern Stroma in 2+ Patients",
+       title= "Up in Higher Risk Stroma in 2+ Patients",
        fill="Term\nSource")
 
 #ggsave("WorseStroma_3plusTerms.png", path=path)
@@ -2086,12 +1632,12 @@ ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
   ylim(1,15)+
   labs(x="Term Name",
        y="-Log10(p value)",
-       title= "Up in Worse Pattern of Invasion\nStroma in 2+ Patients",
+       title= "Up in Higher Risk\nStroma in 2+ Patients",
        color="Term\nSource",
        size="Intersection\nsize")
 
 
-#ggsave("terms_upinWorseStromashared.png", path= path)
+#ggsave("terms_upinWorseStromashared2.png", path= path)
 
 
 ###Getting genes driving the upregulated pathways
