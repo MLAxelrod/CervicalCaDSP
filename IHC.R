@@ -7,6 +7,7 @@ table(ihc$SILVA)
 
 sub <- ihc[ihc$SILVA %in% c("A", "B", "C", "Benign"),]
 
+
 sub2 <- sub[!sub$CD68.MA=="n",]
 sub2 <- sub2[!sub2$CK56.I.MA=="n",]
 
@@ -18,6 +19,10 @@ sub2$CK56.I.LS <- as.numeric(sub2$CK56.I.LS)
 
 sub2$CD68.LS <- as.numeric(sub2$CD68.LS)
 sub2$CD68.MA <- as.numeric(sub2$CD68.MA)
+
+
+sub2$CaseID <- revalue(as.character(sub2$Case), c("8522" = "WU-01", "11911" = "WU-05", "15381"= "WU-02", "18418"="WU-06", "27635" = "WU-07", "34511"="WU-04", "53047"="WU-03"))
+
 
 p1 <- ggplot(sub2, aes(CK56.I.LS, CK56.I.MA))+
   geom_jitter(width=0.1, height=0.1)+
@@ -55,15 +60,18 @@ sub2$CK56.C <- (sub2$avgCK56.I*sub2$avgCK56.P)
 
 stat <- wilcox_test(sub2, avgCD68~SILVA)%>% add_significance()
 
-ggplot(sub2, aes(SILVA, avgCD68))+
+p5 <- ggplot(sub2, aes(SILVA, avgCD68))+
   geom_boxplot(outlier.shape = NA)+
-  geom_jitter(width=0.1, height=0)+
+  geom_jitter(aes(color=CaseID),width=0.1, height=0)+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
   scale_x_discrete(limits=c("Benign", "A", "B", "C"))+
   stat_pvalue_manual(stat, y.position=c(1.5, 2.4, 2.2, 2.5), hide.ns=TRUE, lable="p.adj.signif")+
   labs(x="Silva Pattern",
        y="CD68 average score",
          title="CD68 IHC")+
-  theme(plot.title = element_text(hjust=0.5))
+  theme(plot.title = element_text(hjust=0.5), legend.position = "none")
 
 #ggsave("CD68avgscore_s.png", path=path)
 
@@ -99,15 +107,21 @@ stat <- wilcox_test(sub2, CK56.C~SILVA)%>% add_significance()
 
 p3 <- ggplot(sub2, aes(SILVA, CK56.C))+
   geom_boxplot(outlier.shape = NA)+
-  geom_jitter(width=0.1, height=0)+
+  geom_jitter(aes(color=CaseID),width=0.1, height=0)+
+  scale_color_manual(values = c("WU-01"="#F6222E", "WU-02"="#3283FE" , "WU-03"="#FEAF16", 
+                                "WU-04"="#C4451C","WU-05"="#2ED9FF", "WU-06"="#1C8356",
+                                "WU-07"= "#DEA0FD"))+
   scale_x_discrete(limits=c("Benign", "A", "B", "C"))+
   stat_pvalue_manual(stat, y.position=c(201), hide.ns=TRUE, lable="p.adj.signif", step.increase = 0.1)+
   labs(x="Silva Pattern",
        y="CK5/6 (percent * intensity)",
-       title="CK5/6 IHC composite")+
+       title="CK5/6 IHC composite",
+       color = "Case")+
   theme(plot.title = element_text(hjust=0.5))
 
-p3
+p5+p3
+#ggsave("IHC_quant.png", path=path)
+
 #ggsave("ck56_c2.png", path=path)
 
 p1+p2+p3

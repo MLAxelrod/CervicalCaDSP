@@ -19,6 +19,7 @@ path <- "C:/Users/marga/Desktop/CCa_GEOMX/plots/"
 
 data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RNA Seq V2 RSEM).txt")
 data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RNA Seq V2 RSEM)_stroma.txt")
+data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RNA Seq V2 RSEM)_CD68.txt")
 meta <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/KM_Plot__Overall_(months).txt")
 
 colnames(meta) <- c("Study", "Pt", "OS_status", "OS_months")
@@ -39,6 +40,7 @@ all(df$SAMPLE_ID == meta$Pt)
 ##Scale Row by z-score
 df2 <- as.data.frame(df[,3:177])
 df2 <- as.data.frame(df[,3:15])
+df2 <- as.data.frame(df[,3:3])
 df2$SLURP2 <-  NULL
 df2$TMEM265 <- NULL
 sum(is.na(df2)) ##remove NA values
@@ -55,6 +57,36 @@ meta <- mutate(meta, OSgroup=ifelse(meta$OS_months>22.57, "long", "short"))
 
 full <- cbind(meta, df5)
 
+
+###CD68
+cp <- cutpointr(full, CD68, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
+summary(cp)
+summary(full$CD68)
+
+
+full <- mutate(full, CD68group=ifelse(full$CD68>-0.921, "high", "low")) #youden
+full <- mutate(full, CD68group=ifelse(full$CD68>-0.2353, "high", "low")) #median
+
+
+fit<-survfit(Surv(OS_months, OS_stat_num) ~ CD68group, data=full)
+print(fit)
+
+ggsurvplot(fit,
+           data=full,
+           pval = TRUE, pval.coord=c(40,0.1),
+           risk.table = TRUE, 
+           risk.table.col = "strata", 
+           censor.shape=124,
+           ggtheme = theme_classic(),
+           font.y=14, font.x=14, font.tickslab="black",
+           legend.title=element_blank(),
+           tables.theme = theme_cleantable(),
+           fontsize=4,tables.y.text=FALSE)
+
+
+
+
+########## KRT6A
 cp <- cutpointr(full, KRT6A, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
 summary(cp)
 summary(full$KRT6A)
