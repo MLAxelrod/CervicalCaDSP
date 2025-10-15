@@ -6,7 +6,8 @@ path <- "C:/Users/marga/Desktop/CCa_GEOMX/plots/"
 table(ihc$SILVA)
 
 sub <- ihc[ihc$SILVA %in% c("A", "B", "C", "Benign"),]
-
+sub$case.silva <- paste(sub$Case, sub$SILVA, sep=".")
+table(sub$case.silva)
 
 sub2 <- sub[!sub$CD68.MA=="n",]
 sub2 <- sub2[!sub2$CK56.I.MA=="n",]
