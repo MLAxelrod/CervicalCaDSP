@@ -1393,6 +1393,11 @@ up.p15 <- p15.BvAepi[p15.BvAepi$log2FoldChange>0.5,]
 up.p53 <- p53.CvAepi[p53.CvAepi$log2FoldChange>0.5,]
 up.p34 <- p34.BvAepi[p34.BvAepi$log2FoldChange>0.5,]
 
+#write.csv(p85.BvAepi, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p85BvAepi.csv")
+#write.csv(p11.CvBepi, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p11CvBepi.csv")
+#write.csv(p15.BvAepi, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p15BvAepi.csv")
+#write.csv(p53.CvAepi, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p53CvAepi.csv")
+#write.csv(p34.BvAepi, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p34BvAepi.csv")
 
 
 a <- list(pt11=up.p11$gene, pt53 = up.p53$gene, pt34 = up.p34$gene, pt85=up.p85$gene, pt15=up.p15$gene)
@@ -1401,6 +1406,8 @@ ggvenn(a) + ggtitle("Shared genes up in high-risk vs low-risk epithelium (Log2FC
 
 
 test <- as.data.frame(table(unlist(a)))
+
+#write.csv(test, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/GenesUpinHighRiskEpibynumberofcases.csv")
 
 ggplot(test, aes(Freq)) + geom_histogram()+
   geom_text(stat='count', aes(label=..count..), position = position_stack(vjust = 1.2),size=4)+
@@ -1552,6 +1559,12 @@ up.p15 <- p15.BvAstroma[p15.BvAstroma$log2FoldChange>0.5,]
 up.p53 <- p53.CvAstroma[p53.CvAstroma$log2FoldChange>0.5,]
 up.p34 <- p34.BvAstroma[p34.BvAstroma$log2FoldChange>0.5,]
 
+# write.csv(p85.BvAstroma, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p85BvAstroma.csv")
+# write.csv(p11.CvBstroma, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p11CvBstroma.csv")
+# write.csv(p15.BvAstroma, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p15BvAstroma.csv")
+# write.csv(p53.CvAstroma, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p53CvAstroma.csv")
+# write.csv(p34.BvAstroma, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/p34BvAstroma.csv")
+
 
 
 a <- list(pt11=up.p11$gene, pt53 = up.p53$gene, pt34 = up.p34$gene, pt85=up.p85$gene, pt15=up.p15$gene)
@@ -1560,6 +1573,8 @@ ggvenn(a) + ggtitle("Shared genes up in high-risk vs low-risk stroma (Log2FC>0.5
 
 
 test <- as.data.frame(table(unlist(a)))
+
+#write.csv(test, file="C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/GenesUpinHighRiskStromabynumberofcases.csv")
 
 ggplot(test, aes(Freq)) + geom_histogram()+
   geom_text(stat='count', aes(label=..count..), position = position_stack(vjust = 1.2),size=4)+

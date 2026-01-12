@@ -443,8 +443,9 @@ ggsave("legend.png", path=path)
 #ggsave("selectStromaGenes2.png", path=path)
 
 
-##################################################
-########DESeq on whole dataset##############
+####################################################
+#########DESeq on whole dataset#####################
+####################################################
 
 ##### epithelium v stroma ####
 #mainly a proof of concept that there are expected differences in these compartments
@@ -820,7 +821,7 @@ ggplot(result, aes(x=log2FoldChange, y=-log10(padj)))+
 
 
 ###############################################################
-##### DE Seq by risk in EPI ############
+##### DE Seq by risk in EPI #############################
 #######################################################
 
 dds <- DESeqDataSetFromMatrix(countData = counts.epi,
@@ -925,12 +926,17 @@ ggplot(result, aes(x=log2FoldChange, y=-log10(padj)))+
   geom_point()+
   geom_hline(yintercept = -log10(0.05), linetype="dashed")+
   geom_vline(xintercept =0, linetype="dashed")+
-  geom_text_repel(data=head(result[result$padj<0.1,],50), aes(label=gene))+
+  geom_text_repel(data=head(result[result$padj<0.1,],100), aes(label=gene), max.overlaps = 15)+
   labs(x="Log2 Fold Change",
        y= "-Log10(adj. p-value)",
        title="Differentially expressed genes in High-risk v Low-risk epithelium")
 
 #ggsave("HighvLowepi_volc.png", path=path)
+
+#write.csv(result, file = "C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/AllHighvsLowrisk.csv")
+
+
+
 
 
 sig<-result[result$padj<0.1,]
@@ -959,6 +965,8 @@ upvN <- hivnorm[hivnorm$log2FoldChange>1,]
 upHi <- unique(c(upvLo$gene, upvN$gene))
 
 
+
+
 gostres <- gost(query=upvLo$gene, organism = "hsapiens", ordered_query = FALSE, 
                 multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
                 sources= c("REAC", "WP", "KEGG", "GO:MF"),
@@ -970,17 +978,19 @@ gostplot(gostres, capped = FALSE, interactive = TRUE)
 foo4 <- gostres$result
 
 #foo5 <- foo4[foo4$intersection_size>15,]
-terms <- c("GO:0045236", "GO:0061134", "GO:0008236", "GO:0008233", "GO:0005539", "KEGG:04610", "KEGG:04512",
-           "KEGG:04510",  "REAC:R-HSA-1474244", "REAC:R-HSA-1280215", "WP:WP558", "WP:WP129",
-           "WP:WP619")
+# terms <- c("GO:0045236", "GO:0061134", "GO:0008236", "GO:0008233", "GO:0005539", "KEGG:04610", "KEGG:04512",
+#            "KEGG:04510",  "REAC:R-HSA-1474244", "REAC:R-HSA-1280215", "WP:WP558", "WP:WP129",
+#            "WP:WP619", "GO:0005201", "GO:0005518", "KEGG:04512", "KEGG:04510", "KEGG:05165", "KEGG:04151", 
+#            "REAC:R-HSA-1474244", "REAC:R-HSA-1474228", "REAC:R-HSA-3000178")
 
+terms <- c("GO:0004175", "GO:0005518", "KEGG:04610", "KEGG:04115", "KEGG:04512", "REAC:R-HSA-1474244", "REAC:R-HSA-1474228", "GO:0008233")
 
 publish_gosttable(gostres, highlight_terms = terms,
                   use_colors = TRUE, 
                   show_columns = c("source", "term_name", "term_size", "intersection_size", "intersection"),
                   filename = NULL)
 
-foo4$per <- foo4$intersection_size/foo4$term_size
+#foo4$per <- foo4$intersection_size/foo4$term_size
 
 p <- gostplot(gostres, capped = FALSE, interactive = FALSE)
 
@@ -990,6 +1000,39 @@ pp <- publish_gostplot(p, highlight_terms = terms,
 
 
 #ggsave("Terms_upinhivlowriskepi.png", path=path)
+
+
+
+
+
+c(`GO:MF` = "#dc3912", `GO:BP` = "#ff9900", `GO:CC` = "#109618", KEGG =
+    "#dd4477", REAC = "#3366cc", WP = "#0099c6", TF = "#5574a6", MIRNA = "#22aa99", HPA =
+    "#6633cc", CORUM = "#66aa00", HP = "#990099")
+
+
+foo5 <- foo4[foo4$term_id %in% terms,]
+
+
+ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
+  geom_point(aes(size=intersection_size, color=source))+
+  coord_flip()+
+  scale_size(range = c(0,7), limits=c(0,35))+
+  scale_color_manual(values= c("#109618","#990099", "#3366cc"))+
+#  ylim(1,15)+
+  labs(x="Term Name",
+       y="-Log10(p value)",
+       title= "Up in Higher Risk\nEpithelium (whole cohort)",
+       color="Term\nSource",
+       size="Intersection\nsize")
+
+#ggsave("pathways_upinHighEpi_wholecohort.png", path=path)
+
+################
+
+
+
+
+
 
 
 gostres <- gost(query=upvN$gene, organism = "hsapiens", ordered_query = FALSE, 
@@ -1119,8 +1162,9 @@ Heatmap(z,
 
 
 
-################################
-##### Risk in Stroma DDS ###
+####################################
+##### Risk in Stroma DDS ###########
+####################################
 
 dds <- DESeqDataSetFromMatrix(countData = counts.stroma,
                               colData = meta.stroma,
@@ -1232,6 +1276,8 @@ ggplot(result, aes(x=log2FoldChange, y=-log10(padj)))+
 #ggsave("HighvLowStroma_volc.png", path=path)
 
 
+#write.csv(result, file = "C:/Users/marga/Desktop/CCa_GEOMX/SupplementalData/AllHighvsLowriskStroma.csv")
+
 sig<-result[result$padj<0.1,]
 sig<-na.omit(sig)
 ranks<-sig$log2FoldChange
@@ -1272,7 +1318,26 @@ gostplot(gostres, capped = FALSE, interactive = TRUE)
 foo4 <- gostres$result
 
 
-terms <- c("GO:0061134", "GO:0005201", "REAC:R-HSA-1474244", "GO:0005178")
+terms <- c("GO:0061134", "GO:0005201", "REAC:R-HSA-1474244", "GO:0005178", "KEGG:04512", "REAC:R-HSA-1474228")
+
+
+foo5 <- foo4[foo4$term_id %in% terms,]
+
+
+ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
+  geom_point(aes(size=intersection_size, color=source))+
+  coord_flip()+
+  scale_size(range = c(0,5), limits=c(0,10))+
+  scale_color_manual(values= c("#109618","#990099", "#3366cc"))+
+  #  ylim(1,15)+
+  labs(x="Term Name",
+       y="-Log10(p value)",
+       title= "Up in Higher Risk\nStroma (whole cohort)",
+       color="Term\nSource",
+       size="Intersection\nsize")
+
+#ggsave("pathways_upinHighStroma_wholecohort.png", path=path)
+
 
 
 
