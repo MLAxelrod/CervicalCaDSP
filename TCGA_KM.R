@@ -1,8 +1,13 @@
 ##TCGA KM 
 
+library(plyr)
+library(broom)
+library(tidyverse)
 library(survival)
 library(survminer)
 library(precrec)
+library(cutpointr)
+library(ggfortify)
 
 
 scaleRow <- function(x) {
@@ -22,21 +27,37 @@ data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RN
 #data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RNA Seq V2 RSEM)_stroma.txt")
 #data <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/mRNA expression (RNA Seq V2 RSEM)_CD68.txt")
 meta <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/KM_Plot__Overall_(months).txt")
+stage <- read_tsv("C:/Users/marga/Desktop/CCa_GEOMX/TCGA/cbio/American_Joint_Committee_on_Cancer_Tumor_Stage_Code.full.txt")
 
 colnames(meta) <- c("Study", "Pt", "OS_status", "OS_months")
+colnames(stage) <- c("Study", "Pt", "AJCC_stage")
+
 
 ##make status a numeric
 meta$OS_stat_num <- as.numeric(substr(meta$OS_status,1,1))
 
+##add stage to meta
+stage$Pt %in% meta$Pt
+stage.df <- stage[match(meta$Pt, stage$Pt),]
+stage.df$AJCC_stage2 <- replace_na(stage.df$AJCC_stage, "Unknown")
+stage.df$AJCC_stage2 <- revalue(stage.df$AJCC_stage2, c("TX" = "Unknown"))
+stage.df$Pt == meta$Pt
+meta$Stage <- stage.df$AJCC_stage2
+table(meta$Stage)
+
+
 ##get rid of trailing "-01" in sample ID
 data$SAMPLE_ID <- substr(data$SAMPLE_ID, 1, nchar(data$SAMPLE_ID)-3)
 
+##Match meta to data##MAJCC_stageatch meta to data
 data$SAMPLE_ID %in% meta$Pt
 all(data$SAMPLE_ID %in% meta$Pt)
 
 df <- data[match(meta$Pt, data$SAMPLE_ID),]
 
 all(df$SAMPLE_ID == meta$Pt)
+
+
 
 ##Scale Row by z-score; depending on number of genes included
 df2 <- as.data.frame(df[,3:177])
@@ -101,17 +122,44 @@ ggsurvplot(fit,
 
 
 
+table(full$SCOREgroup, full$Stage)
+
+full$stage_simple <- revalue(full$Stage, c("T1b" = "T1", "T1b1" = "T1", "T1b2" = "T1", "T2a" = "T2", "T2a1" = "T2", "T2a2" = "T2", "T2b" = "T2", "T3b" = "T3"))
+table(full$stage_simple, full$SCOREgroup)
+
+fit<-survfit(Surv(OS_months, OS_stat_num) ~ stage_simple, data=full)
+ggsurvplot(fit,
+           data=full,
+           pval = TRUE, pval.coord=c(20,0.1),
+           risk.table = TRUE, 
+           risk.table.col = "strata", 
+           censor.shape=124,
+           ggtheme = theme_classic(),
+           font.y=14, font.x=14, font.tickslab="black",
+           legend.title=element_blank(),
+           tables.theme = theme_cleantable(),
+           fontsize=4,tables.y.text=FALSE,
+           tables.col="black")
+
+
 ##############################
 ### COX proportional hazard model
+
+#cox <- coxph(Surv(OS_months, OS_stat_num) ~ score +strata(stage_simple), data=full)
+
 cox <- coxph(Surv(OS_months, OS_stat_num) ~ score, data=full)
 
 summary(cox)
 
 tcox <- tidy(cox, exponentiate=T, conf.int=T) 
 
+cox_fit <- survfit(cox)
+#plot(cox_fit, main = "cph model", xlab="Time")
+autoplot(cox_fit)
 
 
-#####################################
+
+#########################################################################################################
 ####Additional single gene analyses#########
 
 ###CD68
