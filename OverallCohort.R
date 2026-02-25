@@ -253,7 +253,6 @@ ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
 pcadata<-cbind(t(data), meta)
 pca<-prcomp(t(data), scale=TRUE)
 pcadata$Case <- as.character(pcadata$Case)
-
 pcadata$Risk <- revalue(pcadata$Risk, c("Normal" = "Benign"))
 pcadata$Compartment <- revalue(pcadata$Compartment, c("epi" = "Epithelium", "stroma" ="SIME"))
 
