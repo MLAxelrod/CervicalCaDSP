@@ -1,6 +1,9 @@
 ##CervicalCancer
 ##GeoMX DSP
 
+####################################################################################
+########## Exploratory analyses, code below not used for primary figures!! ###########
+
 library(ggplot2)
 library(rstatix)
 library(ggpubr)
@@ -129,8 +132,7 @@ full <- cbind(meta, as.data.frame(t(scaleRow(data)))) #with Z score
 
 #full <- cbind(meta, as.data.frame(t(data))) # no z score
 
-full$ID2 <- NULL
-###really just get rid of this in metadata
+full$ID2 <- NULL ###really just get rid of this in metadata
 
 full.e <- full[full$Compartment=="epi",]
 

@@ -1,6 +1,9 @@
 ###################################
 ### WITHIN PATIENT ANALYSES ########
-##Load data and packages from overallcohort
+
+
+## Load data and packages from OverallCohort.R
+## Code below used to make primary figures
 
 library(ggvenn)
 
@@ -128,9 +131,6 @@ all(rownames(meta.p11.s)==colnames(data.p11.s))
 dds <- DESeqDataSetFromMatrix(countData = counts.p11.e,
                               colData = meta.p11.e,
                               design= ~ Silva)
-
-
-#dds$Silva <- relevel(dds$Silva, ref = "normal") # use this to set control group
 
 dds<-DESeq(dds)
 resultsNames(dds)
@@ -468,12 +468,11 @@ sig<-na.omit(sig)
 p15.BvAstroma <- sig
 
 
-
 ##################################################################################
-##############Compare all worst pattern of invasion to less invasive################
+############## Compare all worst pattern of invasion to less invasive ################
 #P85 Blo v A #P11 C vs Bhi #P15 Blo v A #P34 Bhi v A #P53 Cv A
 
-#EPI
+#EPITHELIUM 
 up.p85 <- p85.BvAepi[p85.BvAepi$log2FoldChange>0.5,]
 up.p11 <- p11.CvBepi[p11.CvBepi$log2FoldChange>0.5,]
 up.p15 <- p15.BvAepi[p15.BvAepi$log2FoldChange>0.5,]
@@ -503,7 +502,7 @@ ggplot(test, aes(Freq)) + geom_histogram()+
 #ggsave("UpHivLo_epi_histogram.png", path=path)
 
 
-############ up in 2+ pts
+############ Pathway analysis on genes up in 2+ patients higher risk epithelium
 up.hi.epi <- test[test$Freq>1,]
 
 gostres <- gost(query=up.hi.epi$Var1, organism = "hsapiens", ordered_query = FALSE, 
@@ -518,9 +517,7 @@ foo4 <- gostres$result
 
 terms <- c("GO:0050839", "GO:0005201", "KEGG:04512", "KEGG:04510", "KEGG:04151", "KEGG:05165", "REAC:R-HSA-1474244", "REAC:R-HSA-1474228", "REAC:R-HSA-216083")
 
-
 foo5 <- foo4[foo4$term_id %in% terms,]
-
 
 ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
   geom_point(aes(size=intersection_size, color=source))+
@@ -534,12 +531,11 @@ ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
        color="Term\nSource",
        size="Intersection\nsize")
 
-
 #ggsave("terms_upinWorseEPIshared2plus_New.png", path= path)
 
 
 
-########STROMA ################
+######## STROMA/SIME ################
 up.p85 <- p85.BvAstroma[p85.BvAstroma$log2FoldChange>0.5,]
 up.p11 <- p11.CvBstroma[p11.CvBstroma$log2FoldChange>0.5,]
 up.p15 <- p15.BvAstroma[p15.BvAstroma$log2FoldChange>0.5,]
@@ -570,11 +566,9 @@ ggplot(test, aes(Freq)) + geom_histogram()+
 #ggsave("UpHivLo_stroma_histogram.png", path=path)
 
 
-#### DO go on 3+ vs 2+
+#### Pathway analysis on genes up in 2+ cases in higher risk SIME
 
 up.hi.s <- test[test$Freq>1,]
-
-
 
 gostres <- gost(query=up.hi.s$Var1, organism = "hsapiens", ordered_query = FALSE, 
                 multi_query = FALSE, significant = TRUE, exclude_iea = FALSE,
@@ -587,15 +581,10 @@ gostres <- gost(query=up.hi.s$Var1, organism = "hsapiens", ordered_query = FALSE
 foo4 <- gostres$result
 
 terms <- c("REAC:R-HSA-6798695", "REAC:R-HSA-168249", "REAC:R-HSA-1474244", "KEGG:04145", "GO:0005125", "WP:WP2806", "GO:0004175", "WP:WP5055")
-
 terms <- c("REAC:R-HSA-6798695", "REAC:R-HSA-168249", "REAC:R-HSA-1474244", "REAC:R-HSA-1474228", "KEGG:04145", "KEGG:04610", "GO:0001968", "GO:0005125", "GO:0004175", "WP:WP2806")
 
 
 foo5 <- foo4[foo4$term_id %in% terms,]
-
-c(`GO:MF` = "#dc3912", `GO:BP` = "#ff9900", `GO:CC` = "#109618", KEGG =
-    "#dd4477", REAC = "#3366cc", WP = "#0099c6", TF = "#5574a6", MIRNA = "#22aa99", HPA =
-    "#6633cc", CORUM = "#66aa00", HP = "#990099")
 
 
 ggplot(foo5, aes(reorder(term_name, p_value), -log10(p_value)))+
