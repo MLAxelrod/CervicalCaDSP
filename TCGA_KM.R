@@ -49,15 +49,11 @@ table(meta$Stage)
 ##get rid of trailing "-01" in sample ID
 data$SAMPLE_ID <- substr(data$SAMPLE_ID, 1, nchar(data$SAMPLE_ID)-3)
 
-##Match meta to data##MAJCC_stageatch meta to data
+##Match meta to data#
 data$SAMPLE_ID %in% meta$Pt
 all(data$SAMPLE_ID %in% meta$Pt)
-
 df <- data[match(meta$Pt, data$SAMPLE_ID),]
-
 all(df$SAMPLE_ID == meta$Pt)
-
-
 
 ##Scale Row by z-score; depending on number of genes included
 df2 <- as.data.frame(df[,3:177])
@@ -73,38 +69,29 @@ df4 <- as.data.frame(t(df2))
 df3 <- scaleRow(df4)
 df5 <- as.data.frame(t(df3))
 
+#define long and short group
 summary(meta$OS_months)
-
-meta <- mutate(meta, OSgroup=ifelse(meta$OS_months>22.57, "long", "short"))
+meta <- mutate(meta, OSgroup=ifelse(meta$OS_months>22.57, "long", "short")) #by median
 
 
 full <- cbind(meta, df5)
 
 
 ####Make risk score 
-
-risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC") ##epi genes
-
+risk.genes <- c("FN1", "KRT6A", "LAMC2", "TNC")
 risk.data <- full[,colnames(full) %in% risk.genes]
-
 risk.data$score <- rowSums(risk.data)/length(risk.genes)
-
 full$score <- risk.data$score
 
-
+#Youden cut point
 cp <- cutpointr(full, score, OSgroup, method = maximize_metric, metric = youden, pos_class= "long")
 summary(cp)
 summary(full$score)
 
-
-#four gene
-
 full <- mutate(full, SCOREgroup=ifelse(full$score>-0.3076, "high", "low")) #by youden
 #full <- mutate(full, SCOREgroup=ifelse(full$score>-0.1380, "high", "low")) #by median
 
-
-
-
+##KM by four gene risk score group
 fit<-survfit(Surv(OS_months, OS_stat_num) ~ SCOREgroup, data=full)
 ggsurvplot(fit,
            data=full,
@@ -121,16 +108,16 @@ ggsurvplot(fit,
            palette = c("#DC3220", "#005AB5"))
 
 
-
+##KM by AJCC stage
 table(full$SCOREgroup, full$Stage)
 
-full$stage_simple <- revalue(full$Stage, c("T1b" = "T1", "T1b1" = "T1", "T1b2" = "T1", "T2a" = "T2", "T2a1" = "T2", "T2a2" = "T2", "T2b" = "T2", "T3b" = "T3"))
-table(full$stage_simple, full$SCOREgroup)
+full$stage <- revalue(full$Stage, c("T1b" = "T1", "T1b1" = "T1", "T1b2" = "T1", "T2a" = "T2", "T2a1" = "T2", "T2a2" = "T2", "T2b" = "T2", "T3b" = "T3"))
+table(full$stage, full$SCOREgroup)
 
-fit<-survfit(Surv(OS_months, OS_stat_num) ~ stage_simple, data=full)
+fit<-survfit(Surv(OS_months, OS_stat_num) ~ stage, data=full)
 ggsurvplot(fit,
            data=full,
-           pval = TRUE, pval.coord=c(20,0.1),
+           pval = TRUE, pval.coord=c(10,0.1),
            risk.table = TRUE, 
            risk.table.col = "strata", 
            censor.shape=124,
@@ -139,28 +126,36 @@ ggsurvplot(fit,
            legend.title=element_blank(),
            tables.theme = theme_cleantable(),
            fontsize=4,tables.y.text=FALSE,
-           tables.col="black")
+           tables.col="black",
+           palette = c("#109618","#990099", "#3366cc", "#dc3912"))
+
+
+
+#           palette = c("#C4451C", "#FEAF16","#B00068", "#1C8356"))
+
+
+cols <- c("#F6222E","#3283FE" , "#FEAF16", "#F8A19F","#2ED9FF", "#90AD1C","#B00068", "#DEA0FD",
+          "#325A9B" ,"#C4451C", "#1C8356", "#85660D", "#B10DA1","#1CBE4F", "#C075A6")
 
 
 ##############################
 ### COX proportional hazard model
 
-#cox <- coxph(Surv(OS_months, OS_stat_num) ~ score +strata(stage_simple), data=full)
+cox <- coxph(Surv(OS_months, OS_stat_num) ~ score +strata(stage), data=full) #with stage
 
-cox <- coxph(Surv(OS_months, OS_stat_num) ~ score, data=full)
+cox <- coxph(Surv(OS_months, OS_stat_num) ~ score, data=full) #without stage
 
 summary(cox)
 
 tcox <- tidy(cox, exponentiate=T, conf.int=T) 
 
+#some plots
 cox_fit <- survfit(cox)
-#plot(cox_fit, main = "cph model", xlab="Time")
+plot(cox_fit, main = "cph model", xlab="Time")
 autoplot(cox_fit)
 
-
-
 #########################################################################################################
-####Additional single gene analyses#########
+####Additional single gene analyses#######################
 
 ###CD68
 cp <- cutpointr(full, CD68, OSgroup, method = maximize_metric, metric = youden, pos_class= "long", direction=">=")
